@@ -2,8 +2,17 @@
 
 App Android (Material 3) para pasar fotos de las camaras Samsung NX por WiFi en
 Android moderno (10+), reviviendo el protocolo MobileLink de la extinta
-*Samsung Smart Camera App* (2018). Probada con una **NX3000**; deberia funcionar
-con la familia Smart Camera (NX300, NX mini, WB...).
+*Samsung Smart Camera App* (2018).
+
+## Compatibilidad
+
+**Solo probada con una Samsung NX3000.** El protocolo esta clonado de la app
+oficial, que cubria toda la familia Smart Camera, y NX Link implementa sus dos
+variantes: la de camaras "renovadas" (NX mini, NX3000, NX3300) y la de las
+anteriores (NX300, NX30, NX2000, WB con WiFi..., que usan SSDP en el puerto
+1901 y User-Agent `SEC_DSC_`). En teoria deberian funcionar; en la practica
+nadie lo ha verificado aun. Si lo pruebas con otro modelo, abre un issue con
+el log de la app (boton de la toolbar) tanto si va como si no.
 
 ## Funciones
 
