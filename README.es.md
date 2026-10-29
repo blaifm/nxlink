@@ -69,3 +69,13 @@ Implementación original e independiente creada para interoperar con cámaras
 que sus dueños ya poseen, algo expresamente permitido en la UE (Directiva
 2009/24/CE, art. 6). No contiene código ni recursos de Samsung y no está
 afiliada ni respaldada por Samsung.
+
+## Créditos y proyectos relacionados
+
+- [samsung-nx-hacks](https://github.com/ge0rg/samsung-nx-hacks) y la serie
+  [Hacking the NX300](https://op-co.de/blog/posts/hacking_the_nx300/) de Georg
+  Lukas: la documentación de referencia del ecosistema Samsung NX, gran trabajo
+  previo y contraparte de esta app en el lado de la cámara.
+- Los detalles del protocolo MobileLink/SelectivePush de NX Link salieron de
+  descompilar la Samsung Smart Camera App oficial 1.4.0 con fines de
+  interoperabilidad.
