@@ -1,4 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">NX Link</string>
+    <string name="hint_start">1) Enable MobileLink on the camera  2) Join its WiFi  3) Tap Search</string>
+    <string name="btn_search">Search camera</string>
+    <string name="btn_download_all">Download all</string>
+    <string name="btn_download_n">Download (%1$d)</string>
+    <string name="btn_copy_log">Copy log</string>
+    <string name="toast_log_copied">Log copied</string>
+    <string name="menu_log">Log</string>
+
+    <string name="st_searching">Searching for the camera…</string>
+    <string name="st_no_wifi">No WiFi. Join the camera\'s WiFi network and retry.</string>
+    <string name="st_weird_net">Odd network: no gateway or own IP. Copy the log.</string>
+    <string name="st_talking">Talking to the camera (%1$s:7788), attempt %2$d…</string>
+    <string name="st_idle">The camera is idle: select MobileLink on the camera</string>
+    <string name="st_mode_unsupported">The camera is in \'%1$s\' mode (not supported yet): use MobileLink</string>
+    <string name="st_confirm">The camera asks for confirmation: accept it on the camera screen</string>
+    <string name="st_not_found">Camera not found. Copy the log for debugging.</string>
+    <string name="st_connected">Connected to: %1$s (%2$s)</string>
+    <string name="st_connected_loading">Connected to %1$s · loading photo list…</string>
+    <string name="st_loading_folder">Loading folder…</string>
+    <string name="st_empty_folder">Empty folder</string>
+    <string name="lbl_photos">%1$d photos</string>
+    <string name="lbl_folders">%1$d folders</string>
+    <string name="lbl_tap_hint">tap to select</string>
+    <string name="st_fail">Error: %1$s</string>
+    <string name="st_list_fail">Listing failed: %1$s</string>
+
+    <string name="st_push_detected">\'Select on camera\' mode detected, pairing…</string>
+    <string name="st_push_ready">Paired: pick photos on the camera and send them</string>
+    <string name="st_push_rejected">The camera rejected push mode. Copy the log.</string>
+    <string name="st_receiving">Receiving %1$s (%2$d MB)…</string>
+    <string name="st_received_n">%1$d photos received. You can keep sending from the camera.</string>
+    <string name="st_save_failed">Failed to save %1$s</string>
+    <string name="ev_push_done">The camera finished sending</string>
+    <string name="ev_push_bye">The camera disconnected</string>
+    <string name="ev_with_count">%1$s (%2$d photos received)</string>
+
+    <string name="st_downloading">Downloading %1$d/%2$d: %3$s</string>
+    <string name="st_downloading_mb">Downloading %1$d/%2$d: %3$s  (%4$d of %5$d MB)</string>
+    <string name="st_batch_done">Download finished: %1$d OK, %2$d failed</string>
 </resources>

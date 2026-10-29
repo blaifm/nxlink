@@ -1,56 +1,69 @@
 # NX Link
 
-App Android (Material 3) para pasar fotos de las camaras Samsung NX por WiFi en
-Android moderno (10+), reviviendo el protocolo MobileLink de la extinta
-*Samsung Smart Camera App* (2018).
+🇪🇸 [Versión en español](README.es.md)
 
-## Compatibilidad
+Android app (Material 3) to transfer photos from Samsung NX cameras over WiFi on
+modern Android (10+), reviving the MobileLink protocol of the discontinued
+*Samsung Smart Camera App* (2018). UI in English and Spanish (follows the
+device language).
 
-**Solo probada con una Samsung NX3000.** El protocolo esta clonado de la app
-oficial, que cubria toda la familia Smart Camera, y NX Link implementa sus dos
-variantes: la de camaras "renovadas" (NX mini, NX3000, NX3300) y la de las
-anteriores (NX300, NX30, NX2000, WB con WiFi..., que usan SSDP en el puerto
-1901 y User-Agent `SEC_DSC_`). En teoria deberian funcionar; en la practica
-nadie lo ha verificado aun. Si lo pruebas con otro modelo, abre un issue con
-el log de la app (boton de la toolbar) tanto si va como si no.
+## Compatibility
 
-## Funciones
+**Only tested with a Samsung NX3000.** The protocol was cloned from the official
+app, which covered the whole Smart Camera family, and NX Link implements both of
+its dialects: the "renewal" cameras (NX mini, NX3000, NX3300) and the older ones
+(NX300, NX30, NX2000, WiFi-enabled WB compacts..., which use SSDP on port 1901
+and the `SEC_DSC_` User-Agent). In theory they should work; in practice nobody
+has verified it yet. If you try another model, please open an issue with the
+app log (toolbar button) whether it works or not.
 
-- **MobileLink** ("seleccionar en el smartphone"): galeria en cuadricula con
-  miniaturas, seleccion multiple y descarga a `Pictures/NX300`.
-- **SelectivePush** ("seleccionar en la camara"): la app levanta el servidor que
-  la camara espera en el puerto 18100 y recibe lo que marques en su pantalla.
-- Un solo boton: la app pregunta a la camara en que modo esta y actua.
-- Barra de progreso real por bytes, log de protocolo integrado (icono de la toolbar).
+## Features
 
-## Uso
+- **MobileLink** ("select on smartphone"): thumbnail grid gallery,
+  multi-select, downloads to `Pictures/NX300`.
+- **SelectivePush** ("select on camera"): the app runs the server the camera
+  expects on port 18100 and receives whatever you pick on its screen.
+- One button: the app asks the camera which mode it is in and acts accordingly.
+- Real byte-based progress bar, built-in protocol log (toolbar icon).
 
-1. Activa MobileLink en la camara.
-2. Conecta el movil al WiFi de la camara (`AP_SSC_...`); acepta "mantener
-   conexion sin internet" si Android avisa.
-3. Abre NX Link y pulsa **Buscar camara**. Si la camara pide confirmacion, aceptala.
+## Usage
 
-## Protocolo (ingenieria inversa de la app oficial 1.4.0)
+1. Enable MobileLink on the camera.
+2. Join the camera's WiFi from the phone (`AP_SSC_...`); accept "keep
+   connection without internet" if Android asks.
+3. Open NX Link and tap **Search camera**. Accept the confirmation on the
+   camera if it asks.
 
-- Descubrimiento real: `HEAD /mode/control` por TCP al **7788** de la camara
-  (la IP es el gateway DHCP). Responde con `Operation-Mode` y `Default-URL`.
-  Cabeceras clave: `User-Agent: SEC_MODE_<id>`, `Access-Method : manual` y un
-  `CALLBACK` donde la camara notifica cambios de modo (servidor propio en el 7789).
-- Si `Default-URL` viene "unavailable", la URL llega por el NOTIFY del callback
-  o vive en `http://<camara>:7676/smp_2_`.
-- La descripcion UPnP se pide con `User-Agent: SEC_RVF_ML_<id>` (el "handshake"
-  que empareja; un 401 significa pendiente/denegado).
-- A partir de ahi es DLNA estandar: `ContentDirectory:1` + `Browse` paginado
-  (bloques de 100 desde ObjectID `0`) y descarga HTTP del `<res>` mas grande.
-- SelectivePush: `HEAD /sp/control` al 8100 anunciando `Data-Server <movil>:18100`;
-  la camara sube cada fichero como una peticion HTTP con `Expect: 100-continue`
-  (hay que responder `100 Continue` y cerrar con `200 OK Sub-ErrorCode: 0`).
-- La parte que la app de 2018 no podia hacer en Android moderno:
-  `ConnectivityManager.bindProcessToNetwork()` sobre la red WiFi sin internet.
+## Protocol (reverse-engineered from the official app 1.4.0)
 
-## Compilar
+- Actual discovery: `HEAD /mode/control` over TCP to the camera's port **7788**
+  (the camera IP is the DHCP gateway). It answers with `Operation-Mode` and
+  `Default-URL`. Key headers: `User-Agent: SEC_MODE_<id>`,
+  `Access-Method : manual` and a `CALLBACK` where the camera notifies mode
+  changes (the app runs its own server on 7789).
+- If `Default-URL` comes back "unavailable", the URL arrives via the callback
+  NOTIFY or lives at `http://<camera>:7676/smp_2_`.
+- The UPnP description is fetched with `User-Agent: SEC_RVF_ML_<id>` (the
+  pairing "handshake"; a 401 means pending/denied).
+- From there it is standard DLNA: `ContentDirectory:1` + paginated `Browse`
+  (blocks of 100 from ObjectID `0`) and HTTP download of the largest `<res>`.
+- SelectivePush: `HEAD /sp/control` to port 8100 announcing
+  `Data-Server <phone>:18100`; the camera uploads each file as an HTTP request
+  with `Expect: 100-continue` (reply `100 Continue`, then close with
+  `200 OK Sub-ErrorCode: 0`).
+- The part the 2018 app could not do on modern Android:
+  `ConnectivityManager.bindProcessToNetwork()` on the internet-less WiFi.
 
-Proyecto Gradle estandar: abrir en Android Studio y Run, o
-`./gradlew assembleRelease`. Firma con `debug.keystore` (clave de desarrollo,
-pass `nxlink123`) para poder actualizar siempre sobre la misma instalacion.
-`build.sh` es el build manual original (aapt2+javac+d8) de las v1.x, ya sin uso.
+## Building
+
+Standard Gradle project: open in Android Studio and Run, or
+`./gradlew assembleRelease`. Signed with `debug.keystore` (development key,
+pass `nxlink123`) so any build updates over the same installed app.
+`build.sh` is the original manual build (aapt2+javac+d8) from v1.x, now unused.
+
+## Legal note
+
+This is an original, independently written implementation created for
+interoperability with cameras their owners already have, which is expressly
+permitted in the EU (Directive 2009/24/EC, art. 6). It contains no Samsung
+code or assets and is not affiliated with or endorsed by Samsung.

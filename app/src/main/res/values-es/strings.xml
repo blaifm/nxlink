@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NX Link</string>
+    <string name="hint_start">1) Activa MobileLink en la cámara  2) Conéctate a su WiFi  3) Pulsa Buscar</string>
+    <string name="btn_search">Buscar cámara</string>
+    <string name="btn_download_all">Descargar todo</string>
+    <string name="btn_download_n">Descargar (%1$d)</string>
+    <string name="btn_copy_log">Copiar log</string>
+    <string name="toast_log_copied">Log copiado</string>
+    <string name="menu_log">Log</string>
+
+    <string name="st_searching">Buscando la cámara…</string>
+    <string name="st_no_wifi">No hay WiFi. Conéctate a la red de la cámara y reintenta.</string>
+    <string name="st_weird_net">Red rara: no veo gateway o IP propia. Copia el log.</string>
+    <string name="st_talking">Hablando con la cámara (%1$s:7788), intento %2$d…</string>
+    <string name="st_idle">La cámara está en reposo: selecciona MobileLink en la cámara</string>
+    <string name="st_mode_unsupported">La cámara está en modo \'%1$s\' (aún no soportado): usa MobileLink</string>
+    <string name="st_confirm">La cámara pide confirmación: acéptala en la pantalla de la cámara</string>
+    <string name="st_not_found">No he encontrado la cámara. Copia el log para depurar.</string>
+    <string name="st_connected">Conectado a: %1$s (%2$s)</string>
+    <string name="st_connected_loading">Conectado a %1$s · cargando la lista de fotos…</string>
+    <string name="st_loading_folder">Cargando carpeta…</string>
+    <string name="st_empty_folder">Carpeta vacía</string>
+    <string name="lbl_photos">%1$d fotos</string>
+    <string name="lbl_folders">%1$d carpetas</string>
+    <string name="lbl_tap_hint">toca para seleccionar</string>
+    <string name="st_fail">Fallo: %1$s</string>
+    <string name="st_list_fail">Fallo listando: %1$s</string>
+
+    <string name="st_push_detected">Modo \'elegir en la cámara\' detectado, emparejando…</string>
+    <string name="st_push_ready">Emparejado: elige las fotos en la cámara y envíalas</string>
+    <string name="st_push_rejected">La cámara no aceptó el modo push. Copia el log.</string>
+    <string name="st_receiving">Recibiendo %1$s (%2$d MB)…</string>
+    <string name="st_received_n">%1$d fotos recibidas. Puedes seguir enviando desde la cámara.</string>
+    <string name="st_save_failed">Fallo guardando %1$s</string>
+    <string name="ev_push_done">La cámara ha terminado el envío</string>
+    <string name="ev_push_bye">La cámara se ha desconectado</string>
+    <string name="ev_with_count">%1$s (%2$d fotos recibidas)</string>
+
+    <string name="st_downloading">Descargando %1$d/%2$d: %3$s</string>
+    <string name="st_downloading_mb">Descargando %1$d/%2$d: %3$s  (%4$d de %5$d MB)</string>
+    <string name="st_batch_done">Descarga terminada: %1$d OK, %2$d fallos</string>
+</resources>

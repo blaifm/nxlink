@@ -1,6 +1,5 @@
 package dev.blai.nxlink;
 
-import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ContentResolver;
@@ -26,7 +25,6 @@ import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -118,10 +116,10 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
         findViewById(R.id.btnCopy).setOnClickListener(v -> {
             ClipboardManager cb = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             cb.setPrimaryClip(ClipData.newPlainText("nxlink-log", L.dump()));
-            Toast.makeText(this, "Log copiado", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.toast_log_copied, Toast.LENGTH_SHORT).show();
         });
 
-        L.d("NX Link v2.2 arrancada. Android " + android.os.Build.VERSION.RELEASE
+        L.d("NX Link v2.3 started. Android " + android.os.Build.VERSION.RELEASE
                 + " (" + android.os.Build.MODEL + ")");
     }
 
@@ -155,7 +153,7 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
         return (com.google.android.material.progressindicator.LinearProgressIndicator) findViewById(R.id.progress);
     }
 
-    /** Barra indeterminada (actividad sin porcentaje). */
+    /** Indeterminate activity bar. */
     private void busy(boolean on) {
         runOnUiThread(() -> {
             com.google.android.material.progressindicator.LinearProgressIndicator p = progressBar();
@@ -171,7 +169,7 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
         });
     }
 
-    /** Barra determinada a 0 para una descarga con tamanyo conocido. */
+    /** Determinate bar reset to 0 for downloads with a known size. */
     private void progressStart() {
         runOnUiThread(() -> {
             com.google.android.material.progressindicator.LinearProgressIndicator p = progressBar();
@@ -189,7 +187,7 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
         runOnUiThread(() -> progressBar().setProgress(v));
     }
 
-    /** Toque en una celda: carpeta = entrar, foto = marcar/desmarcar. */
+    /** Cell tap: folder = open, photo = toggle selection. */
     private void onCellTap(Entry e) {
         if (e.container) {
             browseInto(e.id, false);
@@ -204,7 +202,7 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
         SharedPreferences sp = getSharedPreferences("nxlink", MODE_PRIVATE);
         String id = sp.getString("client_id", null);
         if (id == null) {
-            // la app original usaba el MAC del movil; generamos uno estable con pinta de MAC
+            // the original app used the phone's MAC; we generate a stable MAC-looking id
             Random r = new Random();
             StringBuilder sb = new StringBuilder("02");
             for (int i = 0; i < 5; i++) sb.append(String.format(Locale.US, ":%02x", r.nextInt(256)));
@@ -214,21 +212,21 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
         return id;
     }
 
-    // ------------------------------------------------------------- busqueda
+    // ------------------------------------------------------------- discovery
 
     private void startSearch() {
         if (!searching.compareAndSet(false, true)) return;
         btnSearch.setEnabled(false);
         btnAll.setEnabled(false);
         if (pushReceiver != null) { pushReceiver.stop(); pushReceiver = null; }
-        status("Buscando la camara...");
+        status(getString(R.string.st_searching));
         exec.submit(() -> {
             busy(true);
             try {
                 searchFlow();
             } catch (Throwable t) {
-                L.e("busqueda fallida", t);
-                status("Fallo: " + t.getMessage());
+                L.e("search failed", t);
+                status(getString(R.string.st_fail, t.getMessage()));
             } finally {
                 busy(false);
                 searching.set(false);
@@ -240,8 +238,8 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
     private void searchFlow() throws Exception {
         wifiNet = waitForWifi(12_000);
         if (wifiNet == null) {
-            status("No hay WiFi. Conecta el movil al WiFi de la camara y reintenta.");
-            L.d("sin red WiFi tras 12s. Ajustes > WiFi > red de la camara (AP_SSC_...)");
+            status(getString(R.string.st_no_wifi));
+            L.d("no WiFi network after 12s. Settings > WiFi > camera network (AP_SSC_...)");
             return;
         }
         cm.bindProcessToNetwork(wifiNet);
@@ -252,7 +250,7 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
         String phoneIp = null;
         if (lp != null) {
             iface = lp.getInterfaceName();
-            L.d("red WiFi (" + iface + "): " + lp.getLinkAddresses());
+            L.d("WiFi network (" + iface + "): " + lp.getLinkAddresses());
             for (RouteInfo ri : lp.getRoutes()) {
                 if (ri.isDefaultRoute() && ri.getGateway() != null) {
                     gateway = ri.getGateway().getHostAddress();
@@ -263,18 +261,18 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
                     phoneIp = la.getAddress().getHostAddress();
                 }
             }
-            L.d("gateway (probable IP de la camara): " + gateway);
+            L.d("gateway (likely camera IP): " + gateway);
         }
         if (gateway == null || phoneIp == null) {
-            status("Red rara: no veo gateway o IP propia. Copia el log.");
+            status(getString(R.string.st_weird_net));
             L.d("gateway=" + gateway + " phoneIp=" + phoneIp);
             return;
         }
 
         client = new CameraClient(wifiNet, clientId(), iface);
-        L.d("User-Agent base: " + client.getUserAgent());
+        L.d("base User-Agent: " + client.getUserAgent());
 
-        // servidor de callback (la camara conecta aqui para avisar de cambios de modo)
+        // callback server (the camera connects here to announce mode changes)
         if (modeServer != null) modeServer.stop();
         modeServer = new ModeServer();
         int cbPort = modeServer.start(java.net.InetAddress.getByName(phoneIp));
@@ -284,40 +282,40 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
         boolean connected = false;
         int round = 0;
         int authRetries = 0;
-        boolean idleAvisado = false;
+        boolean idleNotified = false;
 
         while (System.currentTimeMillis() < deadline && !connected) {
             round++;
-            status("Hablando con la camara (" + gateway + ":7788), intento " + round + "...");
+            status(getString(R.string.st_talking, gateway, round));
             String descUrl = null;
             try {
                 CameraClient.ModeInfo mi = client.modeControl(gateway, phoneIp, cbPort);
                 if (mi.defaultUrl != null) {
                     descUrl = mi.defaultUrl;
                 } else {
-                    // algunos firmwares dicen "unavailable" en el 7788 pero mandan la URL por NOTIFY
+                    // some firmwares say "unavailable" on 7788 but send the URL via NOTIFY
                     descUrl = descUrlFromEvent(modeServer.lastEvent.get());
-                    if (descUrl != null) L.d("DescriptionURL sacada del NOTIFY: " + descUrl);
+                    if (descUrl != null) L.d("DescriptionURL taken from NOTIFY: " + descUrl);
                 }
                 if (descUrl == null && "mobilelink".equals(mi.mode)) {
                     descUrl = "http://" + gateway + ":7676/smp_2_";
-                    L.d("modo MobileLink sin URL anunciada; pruebo " + descUrl);
+                    L.d("MobileLink mode without announced URL; trying " + descUrl);
                 }
                 if ("selectivepush".equals(mi.mode)) {
                     startPushMode(gateway, phoneIp);
                     return;
                 }
                 if (descUrl == null && "idle".equals(mi.mode)) {
-                    if (!idleAvisado) {
-                        status("La camara esta en reposo: selecciona MobileLink en la camara");
-                        idleAvisado = true;
+                    if (!idleNotified) {
+                        status(getString(R.string.st_idle));
+                        idleNotified = true;
                     }
                 } else if (descUrl == null && !mi.mode.isEmpty()) {
-                    status("La camara esta en modo '" + mi.mode + "' (aun no soportado): usa MobileLink");
+                    status(getString(R.string.st_mode_unsupported, mi.mode));
                 }
             } catch (Exception e) {
-                L.d("sin respuesta en 7788 (" + e.getMessage() + ")");
-                // plan B: SSDP por si fuera un firmware que si lo usa
+                L.d("no reply on 7788 (" + e.getMessage() + ")");
+                // plan B: SSDP, in case this firmware actually uses it
                 if (round % 3 == 0) {
                     Set<String> locs = client.ssdpSearch(2000);
                     if (!locs.isEmpty()) descUrl = locs.iterator().next();
@@ -330,69 +328,71 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
                         connected = true;
                         break;
                     } else if (tried.add(descUrl)) {
-                        L.d("descripcion sin ContentDirectory en " + descUrl);
+                        L.d("description without ContentDirectory at " + descUrl);
                     }
                 } catch (CameraClient.AuthPendingException ape) {
-                    status("La camara pide confirmacion: acepta la conexion en la pantalla de la camara");
+                    status(getString(R.string.st_confirm));
                     authRetries++;
                     if (authRetries % 3 == 0) {
                         String next = client.getUaPrefix().equals("SEC_RVF_ML_") ? "SEC_DSC_" : "SEC_RVF_ML_";
                         client.setUaPrefix(next);
-                        L.d("sigue en 401; pruebo con User-Agent " + next + "...");
+                        L.d("still 401; trying User-Agent " + next + "...");
                     } else {
-                        L.d("401: confirma en la camara (o reinicia MobileLink)...");
+                        L.d("401: confirm on the camera (or restart MobileLink)...");
                     }
                 } catch (Exception e) {
-                    L.d("fallo bajando descripcion " + descUrl + " -> " + e.getMessage());
+                    L.d("failed fetching description " + descUrl + " -> " + e.getMessage());
                 }
             }
             Thread.sleep(1500);
         }
 
         if (!connected) {
-            status("No he encontrado la camara. Copia el log y pasamelo.");
-            L.d("agotado el tiempo de busqueda (" + (SEARCH_TIMEOUT_MS / 1000) + "s)");
+            status(getString(R.string.st_not_found));
+            L.d("search timed out (" + (SEARCH_TIMEOUT_MS / 1000) + "s)");
             return;
         }
 
-        status("Conectado a: " + client.friendlyName + " (" + client.modelName + ")");
+        status(getString(R.string.st_connected, client.friendlyName, client.modelName));
         autoDescend();
     }
 
-    /** Modo "elegir fotos en la camara": servidor en 18100 + emparejamiento /sp/control. */
+    /** "Select on camera" mode: server on 18100 + /sp/control pairing. */
     private void startPushMode(String cameraIp, String phoneIp) {
-        status("Modo 'elegir en la camara' detectado, emparejando...");
+        status(getString(R.string.st_push_detected));
         pushCount = 0;
         pushReceiver = new PushReceiver(wifiNet, clientId(), this);
         boolean ok = pushReceiver.start(cameraIp, phoneIp);
         if (ok) {
-            status("Emparejado: elige las fotos en la camara y dale a enviar");
-            L.d("modo push activo; esperando ficheros en el " + PushReceiver.DATA_PORT);
+            status(getString(R.string.st_push_ready));
+            L.d("push mode active; waiting for files on port " + PushReceiver.DATA_PORT);
         } else {
-            status("La camara no acepto el modo push. Copia el log y pasamelo.");
+            status(getString(R.string.st_push_rejected));
         }
     }
 
-    // callbacks del PushReceiver
+    // PushReceiver callbacks
     @Override
     public boolean onFile(String name, long size, InputStream body) {
         if (size > 0) progressStart(); else busy(true);
-        status("Recibiendo " + name + " (" + (size / 1048576) + " MB)...");
+        status(getString(R.string.st_receiving, name, size / 1048576));
         boolean ok = saveStream(name, size, body);
         busy(false);
         if (ok) {
             pushCount++;
-            status("Recibidas " + pushCount + " fotos. Puedes seguir enviando desde la camara.");
+            status(getString(R.string.st_received_n, pushCount));
         } else {
-            status("Fallo guardando " + name);
+            status(getString(R.string.st_save_failed, name));
         }
         return ok;
     }
 
     @Override
-    public void onEvent(String msg) {
-        L.d("evento push: " + msg);
-        status(msg + (pushCount > 0 ? " (" + pushCount + " fotos recibidas)" : ""));
+    public void onEvent(String code) {
+        L.d("push event: " + code);
+        String msg = "done".equals(code) ? getString(R.string.ev_push_done)
+                : "bye".equals(code) ? getString(R.string.ev_push_bye) : code;
+        status(pushCount > 0 ? getString(R.string.ev_with_count, msg, pushCount) : msg);
     }
 
     private static String descUrlFromEvent(String ev) {
@@ -428,29 +428,29 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
         return result[0];
     }
 
-    // ------------------------------------------------------------- navegacion
+    // ------------------------------------------------------------- browsing
 
-    /** Desde la raiz, baja automaticamente mientras solo haya una carpeta (directo a las fotos). */
+    /** From root, auto-descend while there is a single folder (straight to the photos). */
     private void autoDescend() {
         idStack.clear();
         idStack.push("0");
         exec.submit(() -> {
             busy(true);
             try {
-                status("Conectado a " + client.friendlyName + " · cargando la lista de fotos...");
+                status(getString(R.string.st_connected_loading, client.friendlyName));
                 List<Entry> entries = client.browseAll("0");
                 int depth = 0;
                 while (entries.size() == 1 && entries.get(0).container && depth < 6) {
                     Entry only = entries.get(0);
-                    L.d("entro directo en '" + only.title + "'");
+                    L.d("descending into '" + only.title + "'");
                     idStack.push(only.id);
                     entries = client.browseAll(only.id);
                     depth++;
                 }
                 show(entries);
             } catch (Exception e) {
-                L.e("browse inicial fallido", e);
-                status("Fallo listando: " + e.getMessage());
+                L.e("initial browse failed", e);
+                status(getString(R.string.st_list_fail, e.getMessage()));
             } finally {
                 busy(false);
             }
@@ -462,11 +462,11 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
         exec.submit(() -> {
             busy(true);
             try {
-                status("Cargando carpeta...");
+                status(getString(R.string.st_loading_folder));
                 show(client.browseAll(objectId));
             } catch (Exception e) {
-                L.e("browse fallido", e);
-                status("Fallo listando: " + e.getMessage());
+                L.e("browse failed", e);
+                status(getString(R.string.st_list_fail, e.getMessage()));
             } finally {
                 busy(false);
             }
@@ -476,10 +476,12 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
     private void show(List<Entry> entries) {
         int files = 0, dirs = 0;
         for (Entry e : entries) { if (e.container) dirs++; else files++; }
-        final String resumen = (files > 0 ? files + " fotos" : "")
-                + (files > 0 && dirs > 0 ? " · " : "")
-                + (dirs > 0 ? dirs + " carpetas" : "")
-                + (files > 0 ? " — toca para seleccionar" : "");
+        StringBuilder sb = new StringBuilder();
+        if (files > 0) sb.append(getString(R.string.lbl_photos, files));
+        if (files > 0 && dirs > 0) sb.append(" · ");
+        if (dirs > 0) sb.append(getString(R.string.lbl_folders, dirs));
+        if (files > 0) sb.append(" — ").append(getString(R.string.lbl_tap_hint));
+        final String summary = sb.toString();
         runOnUiThread(() -> {
             current.clear();
             current.addAll(entries);
@@ -487,15 +489,17 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
             adapter.notifyDataSetChanged();
             btnAll.setEnabled(!entries.isEmpty());
             updateDownloadButton();
-            tvStatus.setText(entries.isEmpty() ? "Carpeta vacia" : resumen);
+            tvStatus.setText(entries.isEmpty() ? getString(R.string.st_empty_folder) : summary);
         });
     }
 
     private void updateDownloadButton() {
-        btnAll.setText(selected.isEmpty() ? "Descargar todo" : "Descargar (" + selected.size() + ")");
+        btnAll.setText(selected.isEmpty()
+                ? getString(R.string.btn_download_all)
+                : getString(R.string.btn_download_n, selected.size()));
     }
 
-    // ------------------------------------------------------------- lista con miniaturas
+    // ------------------------------------------------------------- thumbnail grid
 
     private class EntryAdapter extends ArrayAdapter<Entry> {
         EntryAdapter() {
@@ -552,7 +556,7 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
                                 });
                             }
                         } catch (Exception ex) {
-                            // miniatura fallida: no es grave
+                            // failed thumbnail: not a big deal
                         }
                     });
                 }
@@ -561,7 +565,7 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
         }
     }
 
-    /** Decodifica reducido a ~320px de lado para que la cuadricula vaya fina. */
+    /** Decode downsampled to ~320px so the grid scrolls smoothly. */
     private static Bitmap decodeThumb(byte[] data) {
         BitmapFactory.Options o = new BitmapFactory.Options();
         o.inJustDecodeBounds = true;
@@ -573,7 +577,7 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
         return BitmapFactory.decodeByteArray(data, 0, data.length, o2);
     }
 
-    // ------------------------------------------------------------- descargas
+    // ------------------------------------------------------------- downloads
 
     private void downloadAll() {
         if (!selected.isEmpty()) {
@@ -598,7 +602,7 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
 
     private void batchNow(List<Entry> files) {
         try {
-            if (files.isEmpty()) { L.d("nada que descargar aqui"); busy(false); return; }
+            if (files.isEmpty()) { L.d("nothing to download here"); busy(false); return; }
             long total = 0;
             for (Entry e : files) {
                 Entry.Res r = e.bestRes();
@@ -606,7 +610,7 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
             }
             final long totalBytes = total;
             if (totalBytes > 0) progressStart(); else busy(true);
-            L.d("descargando " + files.size() + " ficheros (" + (totalBytes / 1048576) + " MB)...");
+            L.d("downloading " + files.size() + " files (" + (totalBytes / 1048576) + " MB)...");
             client.setTotalCopyItems(files.size());
             int ok = 0, fail = 0, i = 0;
             long cumul = 0;
@@ -616,21 +620,21 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
                 final int n = files.size();
                 final long base = cumul;
                 final String title = e.title;
-                status("Descargando " + idx + "/" + n + ": " + title);
+                status(getString(R.string.st_downloading, idx, n, title));
                 boolean res = saveEntry(e, (done, t) -> {
                     progressSet(base + done, totalBytes);
-                    status("Descargando " + idx + "/" + n + ": " + title
-                            + "  (" + ((base + done) / 1048576) + " de " + (totalBytes / 1048576) + " MB)");
+                    status(getString(R.string.st_downloading_mb, idx, n, title,
+                            (base + done) / 1048576, totalBytes / 1048576));
                 });
                 if (res) ok++; else fail++;
                 Entry.Res r = e.bestRes();
                 cumul = base + (r != null && r.size > 0 ? r.size : 0);
                 progressSet(cumul, totalBytes);
             }
-            status("Descarga terminada: " + ok + " OK, " + fail + " fallos");
-            L.d("lote terminado: " + ok + " OK, " + fail + " fallos");
+            status(getString(R.string.st_batch_done, ok, fail));
+            L.d("batch done: " + ok + " OK, " + fail + " failed");
         } catch (Exception ex) {
-            L.e("descarga masiva fallida", ex);
+            L.e("batch download failed", ex);
         } finally {
             busy(false);
         }
@@ -645,47 +649,43 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
                 try {
                     collectFiles(client.browseAll(e.id), out, depth + 1);
                 } catch (Exception ex) {
-                    L.d("no he podido entrar en carpeta '" + e.title + "': " + ex.getMessage());
+                    L.d("could not open folder '" + e.title + "': " + ex.getMessage());
                 }
             }
         }
     }
 
-    private void downloadEntries(List<Entry> entries) {
-        exec.submit(() -> batchNow(new ArrayList<>(entries)));
-    }
-
-    /** Descarga el mejor <res> y lo guarda via MediaStore. */
+    /** Download the best <res> and store it via MediaStore. */
     private boolean saveEntry(Entry e, CameraClient.Progress extra) {
         Entry.Res res = e.bestRes();
-        if (res == null) { L.d("'" + e.title + "' no tiene recursos descargables"); return false; }
+        if (res == null) { L.d("'" + e.title + "' has no downloadable resources"); return false; }
         String name = e.title;
         String ext = e.ext();
         if (!name.toLowerCase(Locale.US).endsWith("." + ext)) name = name + "." + ext;
         return saveToMediaStore(name, os -> client.download(res, os, (done, total) -> {
-            L.d("  ..." + (done / 1048576) + " MB" + (total > 0 ? " de " + (total / 1048576) + " MB" : ""));
+            L.d("  ..." + (done / 1048576) + " MB" + (total > 0 ? " of " + (total / 1048576) + " MB" : ""));
             if (extra != null) extra.onProgress(done, total);
         }));
     }
 
-    /** Guarda un fichero entrante del modo push leyendo exactamente size bytes. */
+    /** Store an incoming push-mode file reading exactly size bytes. */
     private boolean saveStream(String name, long size, InputStream in) {
         return saveToMediaStore(name, os -> {
             byte[] buf = new byte[65536];
             long remaining = size, done = 0, mark = 0;
             while (remaining > 0) {
                 int n = in.read(buf, 0, (int) Math.min(buf.length, remaining));
-                if (n <= 0) throw new java.io.IOException("stream cortado con " + remaining + " bytes pendientes");
+                if (n <= 0) throw new java.io.IOException("stream cut with " + remaining + " bytes left");
                 os.write(buf, 0, n);
                 remaining -= n;
                 done += n;
                 if (done - mark > 524288) {
                     mark = done;
                     progressSet(done, size);
-                    L.d("  ..." + (done / 1048576) + " MB de " + (size / 1048576) + " MB");
+                    L.d("  ..." + (done / 1048576) + " MB of " + (size / 1048576) + " MB");
                 }
             }
-            L.d("recibido '" + name + "' (" + done + " bytes)");
+            L.d("received '" + name + "' (" + done + " bytes)");
             return done;
         });
     }
@@ -721,17 +721,17 @@ public class MainActivity extends androidx.appcompat.app.AppCompatActivity imple
         Uri uri = null;
         try {
             uri = cr.insert(collection, v);
-            if (uri == null) throw new Exception("MediaStore.insert devolvio null");
+            if (uri == null) throw new Exception("MediaStore.insert returned null");
             try (OutputStream os = cr.openOutputStream(uri)) {
                 long got = writer.write(os);
-                L.d("guardado " + relPath + "/" + name + " (" + got + " bytes)");
+                L.d("saved " + relPath + "/" + name + " (" + got + " bytes)");
             }
             ContentValues done = new ContentValues();
             done.put(MediaStore.MediaColumns.IS_PENDING, 0);
             cr.update(uri, done, null, null);
             return true;
         } catch (Exception ex) {
-            L.e("fallo guardando '" + name + "'", ex);
+            L.e("failed saving '" + name + "'", ex);
             if (uri != null) try { cr.delete(uri, null, null); } catch (Exception ignored) {}
             return false;
         }

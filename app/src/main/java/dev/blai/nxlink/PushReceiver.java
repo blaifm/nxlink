@@ -56,12 +56,12 @@ public class PushReceiver {
         try {
             server = new ServerSocket(DATA_PORT, 2, InetAddress.getByName(phoneIp));
         } catch (Exception e) {
-            L.d("PushReceiver: no puedo abrir el " + DATA_PORT + ": " + e.getMessage());
+            L.d("PushReceiver: cannot open port " + DATA_PORT + ": " + e.getMessage());
             return false;
         }
         running = true;
         new Thread(() -> {
-            L.d("PushReceiver escuchando en " + phoneIp + ":" + DATA_PORT);
+            L.d("PushReceiver listening on " + phoneIp + ":" + DATA_PORT);
             while (running) {
                 try {
                     Socket c = server.accept();
@@ -77,18 +77,18 @@ public class PushReceiver {
         for (int port = 8100; port < 8104; port++) {
             try {
                 String resp = control(port, phoneIp, "alive");
-                L.d("/sp/control (" + port + ") respuesta:\n" + (resp.isEmpty() ? "(vacia)" : resp.trim()));
+                L.d("/sp/control (" + port + ") response:\n" + (resp.isEmpty() ? "(empty)" : resp.trim()));
                 if (resp.contains("200 OK") || resp.contains("200 ok")) {
                     cameraPort = port;
                     return true;
                 }
                 if (resp.contains("401") || resp.contains("503")) {
-                    L.d("la camara ha rechazado el emparejamiento push");
+                    L.d("the camera rejected the push pairing");
                     stop();
                     return false;
                 }
             } catch (Exception e) {
-                L.d("sin respuesta en " + port + " (" + e.getMessage() + ")");
+                L.d("no reply on " + port + " (" + e.getMessage() + ")");
             }
         }
         stop();
@@ -143,12 +143,12 @@ public class PushReceiver {
             }
             byte[] all = acc.toByteArray();
             if (headerEnd < 0) {
-                L.d("PushReceiver: peticion sin fin de cabecera (" + all.length + " bytes)");
+                L.d("PushReceiver: request without header end (" + all.length + " bytes)");
                 c.close();
                 return;
             }
             String header = new String(all, 0, headerEnd, StandardCharsets.US_ASCII);
-            L.d("PushReceiver <- camara:\n" + header.trim());
+            L.d("PushReceiver <- camera:\n" + header.trim());
 
             String name = null;
             long size = -1;
@@ -170,19 +170,19 @@ public class PushReceiver {
             if (command != null && command.equalsIgnoreCase("Getout")) {
                 out.write("HTTP/1.1 200 OK\r\nContent-Length: 0\r\nSub-ErrorCode: 0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
                 out.flush();
-                sink.onEvent("La camara ha terminado el envio");
+                sink.onEvent("done");
                 c.close();
                 return;
             }
             if (request != null && request.toLowerCase(Locale.US).contains("bye")) {
                 out.write("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
                 out.flush();
-                sink.onEvent("La camara se ha desconectado");
+                sink.onEvent("bye");
                 c.close();
                 return;
             }
             if (name == null || size < 0) {
-                L.d("PushReceiver: cabecera sin fichero reconocible");
+                L.d("PushReceiver: header without recognizable file");
                 out.write("HTTP/1.1 500 Internal Server Error\r\nSub-ErrorCode: 2501\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
                 out.flush();
                 c.close();

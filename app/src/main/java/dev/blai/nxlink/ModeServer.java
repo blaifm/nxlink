@@ -30,16 +30,16 @@ public class ModeServer {
                 port = p;
                 break;
             } catch (Exception e) {
-                L.d("ModeServer: puerto " + p + " ocupado, pruebo el siguiente");
+                L.d("ModeServer: port " + p + " busy, trying next");
             }
         }
         if (server == null) {
-            L.d("ModeServer: no he podido abrir puerto de callback (sigo sin el)");
+            L.d("ModeServer: could not open callback port (continuing without it)");
             return -1;
         }
         running = true;
         thread = new Thread(() -> {
-            L.d("ModeServer escuchando en " + bindAddr.getHostAddress() + ":" + port);
+            L.d("ModeServer listening on " + bindAddr.getHostAddress() + ":" + port);
             while (running) {
                 try {
                     Socket client = server.accept();
@@ -68,7 +68,7 @@ public class ModeServer {
                     sb.append(new String(buf, 0, n, StandardCharsets.US_ASCII));
                 }
                 String req = sb.toString();
-                L.d("ModeServer <- camara (" + client.getInetAddress().getHostAddress() + "):\n"
+                L.d("ModeServer <- camera (" + client.getInetAddress().getHostAddress() + "):\n"
                         + req.trim());
                 lastEvent.set(req);
                 BufferedOutputStream bos = new BufferedOutputStream(client.getOutputStream());

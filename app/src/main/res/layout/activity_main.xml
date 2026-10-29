@@ -28,7 +28,7 @@
         android:paddingEnd="16dp"
         android:paddingBottom="8dp"
         android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:text="1) MobileLink en la camara  2) Conecta el movil a su WiFi  3) Buscar camara" />
+        android:text="@string/hint_start" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -44,7 +44,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="6dp"
-            android:text="Buscar camara" />
+            android:text="@string/btn_search" />
 
         <Button
             android:id="@+id/btnAll"
@@ -54,7 +54,7 @@
             android:layout_weight="1"
             android:layout_marginStart="6dp"
             android:enabled="false"
-            android:text="Descargar todo" />
+            android:text="@string/btn_download_all" />
     </LinearLayout>
 
     <GridView
@@ -97,6 +97,6 @@
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Copiar log" />
+            android:text="@string/btn_copy_log" />
     </LinearLayout>
 </LinearLayout>

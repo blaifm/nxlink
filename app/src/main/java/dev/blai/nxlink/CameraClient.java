@@ -79,7 +79,7 @@ public class CameraClient {
         try {
             network.bindSocket(usock);
         } catch (IOException e) {
-            L.d("aviso: no he podido ligar el socket SSDP a la red WiFi: " + e.getMessage());
+            L.d("warning: could not bind the SSDP socket to the WiFi network: " + e.getMessage());
         }
         sockets.add(usock);
         threads.add(receiver(usock, "M-SEARCH resp", locations, deadline));
@@ -89,7 +89,7 @@ public class CameraClient {
         try {
             if (ifaceName != null) ni = NetworkInterface.getByName(ifaceName);
         } catch (Exception e) {
-            L.d("aviso: sin interfaz para multicast: " + e.getMessage());
+            L.d("warning: no interface for multicast: " + e.getMessage());
         }
         for (int port : SSDP_PORTS) {
             try {
@@ -102,7 +102,7 @@ public class CameraClient {
                 sockets.add(ms);
                 threads.add(receiver(ms, "NOTIFY:" + port, locations, deadline));
             } catch (Exception e) {
-                L.d("aviso: no puedo escuchar NOTIFY en " + port + ": " + e.getMessage());
+                L.d("warning: cannot listen for NOTIFY on " + port + ": " + e.getMessage());
             }
         }
         for (Thread t : threads) t.start();
@@ -231,7 +231,7 @@ public class CameraClient {
             try { sock.close(); } catch (Exception ignored) {}
         }
 
-        L.d("/mode/control respuesta:\n" + (info.raw.isEmpty() ? "(vacia)" : info.raw.trim()));
+        L.d("/mode/control response:\n" + (info.raw.isEmpty() ? "(empty)" : info.raw.trim()));
         String low = info.raw.toLowerCase(java.util.Locale.US);
         info.ok = info.raw.contains("200 OK") || info.raw.contains("200 ok");
         info.newCamera = info.raw.contains("MVERSION");
@@ -247,8 +247,8 @@ public class CameraClient {
                 if (i >= 0) info.defaultUrl = line.substring(i).trim();
             }
         }
-        L.d("modo camara='" + info.mode + "'  Default-URL=" + info.defaultUrl
-                + "  camaraNueva=" + info.newCamera);
+        L.d("camera mode='" + info.mode + "'  Default-URL=" + info.defaultUrl
+                + "  newCamera=" + info.newCamera);
         return info;
     }
 
@@ -265,7 +265,7 @@ public class CameraClient {
      * Devuelve true si encontro un ContentDirectory.
      */
     public boolean fetchDescription(String location) throws IOException {
-        L.d("GET descripcion: " + location + "  (UA=" + getUserAgent() + ")");
+        L.d("GET description: " + location + "  (UA=" + getUserAgent() + ")");
         HttpURLConnection con = open(location);
         con.setRequestMethod("GET");
         con.setRequestProperty("User-Agent", getUserAgent());
@@ -279,14 +279,14 @@ public class CameraClient {
             con.disconnect();
             throw e;
         }
-        L.d("HTTP " + code + " de la camara");
+        L.d("HTTP " + code + " from the camera");
         if (code == 401) {
             con.disconnect();
-            throw new AuthPendingException("la camara devolvio 401 (pendiente de aceptar o denegado)");
+            throw new AuthPendingException("the camera returned 401 (pending acceptance or denied)");
         }
         if (code != 200) {
             con.disconnect();
-            throw new IOException("HTTP " + code + " al pedir la descripcion");
+            throw new IOException("HTTP " + code + " fetching the description");
         }
         String xml = readAll(con.getInputStream());
         con.disconnect();
@@ -316,7 +316,7 @@ public class CameraClient {
                     else if (tag.equals("controlURL")) curControl = text(p);
                 } else if (ev == XmlPullParser.END_TAG) {
                     if (stripNs(p.getName()).equals("service") && p.getDepth() == depth0ForService) {
-                        L.d("servicio: " + curServiceType + "  controlURL=" + curControl);
+                        L.d("service: " + curServiceType + "  controlURL=" + curControl);
                         if (curServiceType != null && curServiceType.contains("ContentDirectory")
                                 && curControl != null && controlUrl == null) {
                             controlUrl = resolve(baseLocation, urlBase, curControl);
@@ -325,9 +325,9 @@ public class CameraClient {
                 }
             }
         } catch (Exception e) {
-            throw new IOException("error parseando descripcion: " + e.getMessage(), e);
+            throw new IOException("error parsing description: " + e.getMessage(), e);
         }
-        L.d("camara: '" + friendlyName + "' modelo='" + modelName + "'  ContentDirectory=" + controlUrl);
+        L.d("camera: '" + friendlyName + "' model='" + modelName + "'  ContentDirectory=" + controlUrl);
     }
 
     private static String resolve(String location, String urlBase, String path) throws IOException {
@@ -398,12 +398,12 @@ public class CameraClient {
             soap("SetTotalCopyItems", body);
             L.d("SetTotalCopyItems(" + n + ") OK");
         } catch (Exception e) {
-            L.d("SetTotalCopyItems no soportado (da igual): " + e.getMessage());
+            L.d("SetTotalCopyItems not supported (harmless): " + e.getMessage());
         }
     }
 
     private String soap(String action, String body) throws IOException {
-        if (controlUrl == null) throw new IOException("sin controlURL (no conectado)");
+        if (controlUrl == null) throw new IOException("no controlURL (not connected)");
         HttpURLConnection con = open(controlUrl);
         byte[] payload = body.getBytes(StandardCharsets.UTF_8);
         con.setRequestMethod("POST");
@@ -444,11 +444,11 @@ public class CameraClient {
                 }
             }
         } catch (Exception e) {
-            throw new IOException("error parseando respuesta SOAP: " + e.getMessage(), e);
+            throw new IOException("error parsing SOAP response: " + e.getMessage(), e);
         }
-        if (didl == null) throw new IOException("respuesta Browse sin <Result>. Respuesta: " + snip(soapXml));
+        if (didl == null) throw new IOException("Browse response without <Result>. Response: " + snip(soapXml));
         parseDidl(didl, out);
-        L.d("Browse -> " + out.entries.size() + " elementos (returned=" + out.numberReturned
+        L.d("Browse -> " + out.entries.size() + " entries (returned=" + out.numberReturned
                 + ", total=" + out.totalMatches + ")");
         return out;
     }
@@ -490,7 +490,7 @@ public class CameraClient {
                 }
             }
         } catch (Exception e) {
-            throw new IOException("error parseando DIDL: " + e.getMessage() + " DIDL: " + snip(didl), e);
+            throw new IOException("error parsing DIDL: " + e.getMessage() + " DIDL: " + snip(didl), e);
         }
     }
 
@@ -515,7 +515,7 @@ public class CameraClient {
         int code = con.getResponseCode();
         if (code != 200) {
             con.disconnect();
-            throw new IOException("HTTP " + code + " bajando " + res.url);
+            throw new IOException("HTTP " + code + " downloading " + res.url);
         }
         long total = con.getContentLengthLong();
         if (total <= 0) total = res.size;

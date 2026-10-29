@@ -63,7 +63,7 @@ public class Entry {
     @Override
     public String toString() {
         if (container) {
-            return "[CARPETA] " + title + (childCount >= 0 ? "  (" + childCount + ")" : "");
+            return "[DIR] " + title + (childCount >= 0 ? "  (" + childCount + ")" : "");
         }
         Res r = bestRes();
         return title + "  (" + (r != null ? human(r.size) : "?") + ")";
