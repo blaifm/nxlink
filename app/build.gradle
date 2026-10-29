@@ -1,0 +1,47 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'dev.blai.nxlink'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "dev.blai.nxlink"
+        minSdk 29
+        targetSdk 34
+        versionCode 9
+        versionName "2.2"
+    }
+
+    signingConfigs {
+        shared {
+            storeFile rootProject.file('debug.keystore')
+            storePassword 'nxlink123'
+            keyAlias 'nxlink'
+            keyPassword 'nxlink123'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.shared
+        }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.shared
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
+
+dependencies {
+    implementation 'com.google.android.material:material:1.12.0'
+}
